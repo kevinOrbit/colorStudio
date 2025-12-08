@@ -2,6 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <!-- 核心适配：设置视口，禁止用户缩放 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaimana Color Studio (Pro)</title>
     <style>
         :root {
@@ -10,10 +12,14 @@
             --text-main: #111;
         }
         
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             background-color: var(--bg);
             color: #fff;
-            /* 1. 字体优化：使用国内友好的系统字体栈 */
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -21,31 +27,47 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            user-select: none; /* 防止双击选中文字，提升APP感 */
+            padding: 20px 10px;
+            user-select: none;
+            overflow-x: hidden;
         }
 
         /* 顶部按钮 */
-        .controls { margin-bottom: 30px; z-index: 10; }
+        .controls { 
+            margin-bottom: 20px; 
+            z-index: 10; 
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
         .btn-gen {
-            padding: 12px 30px; border-radius: 50px; border: none;
+            padding: 12px 30px; 
+            border-radius: 50px; border: none;
             background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
             color: #2b2b2b; font-weight: 800; font-size: 14px;
             cursor: pointer; box-shadow: 0 0 20px rgba(142, 197, 252, 0.4);
             transition: transform 0.2s, box-shadow 0.2s;
             text-transform: uppercase; letter-spacing: 1px;
-            font-family: inherit; /* 继承系统字体 */
+            font-family: inherit;
+            min-width: 200px; /* 移动端适配 */
         }
-        .btn-gen:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(142, 197, 252, 0.6); }
+        .btn-gen:active { transform: scale(0.96); } 
+        @media (hover: hover) {
+            .btn-gen:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(142, 197, 252, 0.6); }
+        }
 
-        /* 海报主体 */
+        /* 海报主体 - 响应式改造 */
         .poster-container {
-            width: 480px; height: 720px; 
+            width: 100%;
+            max-width: 450px; 
+            aspect-ratio: 2/3; /* 保持海报比例 */
+            height: auto; 
+            max-height: 85vh; 
             background: var(--poster-bg);
             position: relative;
             overflow: hidden;
-            border-radius: 4px;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             display: flex; flex-direction: column;
         }
 
@@ -56,8 +78,10 @@
         }
         .orb {
             position: absolute; border-radius: 50%;
-            filter: blur(80px); opacity: 0.7;
+            filter: blur(60px); opacity: 0.7;
             transition: all 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            width: 80%; padding-bottom: 80%; /* 保持圆形 */
+            height: 0;
         }
 
         /* 噪点层 */
@@ -69,54 +93,62 @@
         /* 内容层 */
         .content-layer {
             position: relative; z-index: 3;
-            height: 100%; padding: 40px; box-sizing: border-box;
+            height: 100%; 
+            padding: 8%; 
+            box-sizing: border-box;
             display: flex; flex-direction: column;
             justify-content: space-between;
         }
 
         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #111; padding-bottom: 15px; }
-        .brand { font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #111; }
-        .meta { font-weight: 500; font-size: 14px; color: #555; }
+        .brand { font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #111; }
+        .meta { font-weight: 500; font-size: 13px; color: #555;text-align: center; }
 
-        /* 情绪大字：使用通用粗体字 */
+        /* 情绪大字 */
         .mood-display {
             flex: 1; display: flex; align-items: center; justify-content: center;
         }
         .mood-word {
-            font-family: "Arial Black", "Impact", "Microsoft YaHei", sans-serif; /* 确保粗壮有力 */
-            font-size: 56px; font-weight: 900; letter-spacing: -2px; line-height: 0.9;
+            font-family: "Arial Black", "Impact", "Microsoft YaHei", sans-serif;
+            font-size: clamp(32px, 10vw, 60px); /* 字体自适应 */
+            font-weight: 900; letter-spacing: 0px; line-height: 0.9;
             color: #111; mix-blend-mode: overlay; 
             text-transform: uppercase; text-align: center;
+            word-break: break-word;
         }
 
         /* 配色区域 */
-        .palette-section { margin-top: 20px; }
-        .palette-row { display: flex; gap: 12px; height: 110px; margin-bottom: 30px; }
+        .palette-section { margin-top: 10px; }
+        .palette-row { 
+            display: flex; gap: 8px; 
+            height: 15vh; 
+            max-height: 110px; min-height: 70px;
+            margin-bottom: 20px; 
+        }
         
-        /* 2. 交互支持：色卡样式调整 */
         .swatch {
             flex: 1;
-            border-radius: 16px;
+            border-radius: 12px;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-            padding: 12px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 10px 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
-            cursor: pointer; /* 变成小手图标 */
+            cursor: pointer;
         }
-        .swatch:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
-        .swatch:active { transform: scale(0.95); } /* 点击时的按压感 */
+        .swatch:active { transform: scale(0.92); }
         
         .hex-tag {
             background: rgba(255,255,255,0.9);
-            padding: 4px 8px; border-radius: 6px;
-            font-size: 11px; font-weight: 800; color: #111; font-family: monospace;
-            pointer-events: none; /* 让点击穿透到父元素 */
-            min-width: 50px; text-align: center;
+            padding: 4px 6px; border-radius: 4px;
+            font-size: 10px; 
+            font-weight: 800; color: #111; font-family: monospace;
+            pointer-events: none;
+            width: 100%; text-align: center;
             transition: background 0.3s;
+            white-space: nowrap;
         }
 
-        /* 复制成功的状态样式 */
         .swatch.copied .hex-tag {
             background: #2b2b2b; color: #fff;
         }
@@ -129,15 +161,25 @@
         
         /* 提示框 */
         .toast {
-            position: fixed; top: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            padding: 10px 20px; border-radius: 20px; font-size: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none;
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+            padding: 8px 20px; border-radius: 20px; font-size: 13px; 
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+            color: #fff; font-weight: 500; white-space: nowrap; z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        @media screen and (max-width: 340px) {
+            .brand, .meta { font-size: 12px; }
+            .btn-gen { font-size: 12px; padding: 10px 20px; }
         }
 
     </style>
 </head>
 <body>
 
-<div class="toast" id="toast">点击色块可复制颜色代码</div>
+<!-- 提示框内容会根据复制的颜色动态改变 -->
+<div class="toast" id="toast">色号已复制</div>
 
 <div class="controls">
     <button class="btn-gen" onclick="generateTheme()">✨ 生成随机主题配色</button>
@@ -145,8 +187,8 @@
 
 <div class="poster-container" id="poster">
     <div class="mesh-bg" id="bgLayer">
-        <div class="orb" id="orb1" style="width: 350px; height: 350px; top: -50px; left: -50px;"></div>
-        <div class="orb" id="orb2" style="width: 400px; height: 400px; bottom: -50px; right: -80px;"></div>
+        <div class="orb" id="orb1" style="top: -10%; left: -10%;"></div>
+        <div class="orb" id="orb2" style="bottom: -10%; right: -15%;"></div>
     </div>
     
     <div class="noise-layer"></div>
@@ -186,27 +228,43 @@
     }
 
     // --- 2. 交互核心：复制色彩编码 ---
+    // 修正：Toast 提示应该在这里触发
     function copyColor(element, hex) {
-        // 使用剪贴板 API
         navigator.clipboard.writeText(hex).then(() => {
-            console.log('复制成功: ' + hex);
-            
-            // 视觉反馈：找到这个色块里的文字标签
+            // 1. 震动反馈
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // 2. 卡片内部文字反馈
             const tag = element.querySelector('.hex-tag');
             const originalText = tag.innerText;
-            
-            // 改变文字和样式
-            tag.innerText = "已复制 ✓";
+            tag.innerText = "已复制";
             element.classList.add('copied');
-
-            // 1秒后恢复
             setTimeout(() => {
                 tag.innerText = originalText;
                 element.classList.remove('copied');
             }, 1000);
+
+            // 3. 顶部 Toast 全局反馈 (这里才是正确触发的位置)
+            const toast = document.getElementById('toast');
+            toast.innerText = `色号 ${hex} 已复制`; // 动态显示复制的色号
+            toast.style.opacity = 1;
+            
+            // 清除之前的定时器（如果有），防止闪烁
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => { 
+                toast.style.opacity = 0; 
+            }, 2000);
+
         }).catch(err => {
             console.error('无法复制', err);
-            alert('复制失败，请手动输入');
+            // 兼容性降级处理
+            const input = document.createElement('textarea');
+            input.value = hex;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('色号 ' + hex + ' 已复制');
         });
     }
 
@@ -230,12 +288,12 @@
                 { h: 28, s: rand(40, 60), l: rand(50, 60) } 
             ];
         },
-        'SUNSET': () => { // 新增：日落
+        'SUNSET': () => {
             return [
-                { h: rand(260, 290), s: 60, l: 30 }, // Deep Purple
-                { h: rand(330, 360), s: 80, l: 60 }, // Pink
-                { h: rand(20, 40), s: 90, l: 65 },   // Orange
-                { h: rand(45, 60), s: 100, l: 80 }   // Yellow
+                { h: rand(260, 290), s: 60, l: 30 },
+                { h: rand(330, 360), s: 80, l: 60 },
+                { h: rand(20, 40), s: 90, l: 65 },
+                { h: rand(45, 60), s: 100, l: 80 }
             ];
         },
         'CYBER': () => {
@@ -266,17 +324,14 @@
     };
 
     function generateTheme() {
-        // 随机选择主题
         const themeKeys = Object.keys(themes);
         const randomKey = themeKeys[Math.floor(Math.random() * themeKeys.length)];
         const moodColorsHSL = themes[randomKey]();
         const colors = moodColorsHSL.map(c => hslToHex(c.h, c.s, c.l));
 
-        // 渲染文本
         document.getElementById('moodText').innerText = randomKey;
         document.getElementById('dateTag').innerText = 'NO.' + rand(100, 999);
 
-        // 渲染背景
         document.getElementById('bgLayer').style.backgroundColor = colors[2]; 
         
         const orb1 = document.getElementById('orb1');
@@ -284,29 +339,21 @@
         orb1.style.backgroundColor = colors[0];
         orb2.style.backgroundColor = colors[1];
         
-        orb1.style.transform = `translate(${rand(-60, 60)}px, ${rand(-60, 60)}px) scale(${rand(8,12)/10})`;
-        orb2.style.transform = `translate(${rand(-60, 60)}px, ${rand(-60, 60)}px) scale(${rand(8,12)/10})`;
+        orb1.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(8,12)/10})`;
+        orb2.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(8,12)/10})`;
 
-        // 渲染色卡 (绑定点击事件)
         const swatchBox = document.getElementById('swatchBox');
         swatchBox.innerHTML = '';
         
         colors.forEach(hex => {
-            // 这里将 onclick 直接写入，传入 this 和 hex 值
             swatchBox.innerHTML += `
-                <div class="swatch" style="background-color: ${hex}" onclick="copyColor(this, '${hex}')" title="点击复制">
+                <div class="swatch" style="background-color: ${hex}" onclick="copyColor(this, '${hex}')">
                     <span class="hex-tag">${hex}</span>
                 </div>
             `;
         });
         
-        // 显示提示
-        setTimeout(() => {
-            document.getElementById('toast').style.opacity = 1;
-        }, 500);
-        setTimeout(() => {
-            document.getElementById('toast').style.opacity = 0;
-        }, 4000);
+        // 【修正】这里已经删除了显示 toast 的代码
     }
 
     window.onload = generateTheme;
