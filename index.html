@@ -110,7 +110,7 @@
         }
         .mood-word {
             font-family: "Arial Black", "Impact", "Microsoft YaHei", sans-serif;
-            font-size: clamp(32px, 10vw, 60px); /* 字体自适应 */
+            font-size: clamp(32px, 13vw, 60px); /* 字体自适应 */
             font-weight: 900; letter-spacing: 0px; line-height: 0.9;
             color: #111; mix-blend-mode: overlay; 
             text-transform: uppercase; text-align: center;
@@ -228,7 +228,6 @@
     }
 
     // --- 2. 交互核心：复制色彩编码 ---
-    // 修正：Toast 提示应该在这里触发
     function copyColor(element, hex) {
         navigator.clipboard.writeText(hex).then(() => {
             // 1. 震动反馈
@@ -244,12 +243,11 @@
                 element.classList.remove('copied');
             }, 1000);
 
-            // 3. 顶部 Toast 全局反馈 (这里才是正确触发的位置)
+            // 3. 顶部 Toast 全局反馈
             const toast = document.getElementById('toast');
-            toast.innerText = `色号 ${hex} 已复制`; // 动态显示复制的色号
+            toast.innerText = `色号 ${hex} 已复制`; 
             toast.style.opacity = 1;
             
-            // 清除之前的定时器（如果有），防止闪烁
             if (window.toastTimer) clearTimeout(window.toastTimer);
             window.toastTimer = setTimeout(() => { 
                 toast.style.opacity = 0; 
@@ -268,80 +266,149 @@
         });
     }
 
-    // --- 3. 情绪色彩引擎 ---
-    const themes = {
-        'KAIMANA': () => {
-            const hBase = rand(190, 210); 
-            return [
-                { h: hBase, s: rand(70, 90), l: rand(35, 45) },
-                { h: hBase - 25, s: rand(50, 80), l: rand(70, 85) },
-                { h: 38, s: rand(20, 40), l: rand(88, 96) },
-                { h: 345, s: rand(60, 80), l: rand(65, 75) } 
-            ];
-        },
-        'MATCHA': () => {
-            const hBase = rand(85, 130); 
-            return [
-                { h: hBase, s: rand(25, 45), l: rand(45, 55) },
-                { h: hBase + 15, s: rand(40, 60), l: rand(75, 85) },
-                { h: 40, s: rand(30, 50), l: rand(90, 95) }, 
-                { h: 28, s: rand(40, 60), l: rand(50, 60) } 
-            ];
-        },
-        'SUNSET': () => {
-            return [
-                { h: rand(260, 290), s: 60, l: 30 },
-                { h: rand(330, 360), s: 80, l: 60 },
-                { h: rand(20, 40), s: 90, l: 65 },
-                { h: rand(45, 60), s: 100, l: 80 }
-            ];
-        },
-        'CYBER': () => {
-            return [
-                { h: 240, s: 20, l: 8 }, 
-                { h: rand(280, 320), s: 100, l: 60 }, 
-                { h: rand(160, 190), s: 100, l: 60 }, 
-                { h: 60, s: 100, l: 70 } 
-            ];
-        },
-        'VINTAGE': () => {
-            return [
-                { h: 360, s: 60, l: 40 }, 
-                { h: 42, s: 70, l: 65 }, 
-                { h: 205, s: 40, l: 55 }, 
-                { h: 35, s: 30, l: 90 } 
-            ];
-        },
-        'MORANDI': () => {
-            const h = rand(0, 360);
-            return [
-                { h: h, s: 10, l: 60 },
-                { h: (h+180)%360, s: 15, l: 65 },
-                { h: (h+40)%360, s: 15, l: 75 },
-                { h: (h+200)%360, s: 20, l: 50 }
-            ];
+    // --- 3. 核心：四色生成算法 (移植自 index2.html) ---
+    function generateSmartColors(count) {
+        // 定义模式 (映射 index2.html 的逻辑到海报风格文字)
+        const modes = [
+            { key: 'vibrant', label: 'VIBRANT' },
+            { key: 'natural', label: 'NATURAL' },
+            { key: 'pastel', label: 'PASTEL' },
+            { key: 'dark', label: 'CYBER' }, // 对应 dark 模式
+            { key: 'monochrome', label: 'MONO' }
+        ];
+        
+        // 随机选择模式 (加权：Vibrant 和 Natural 概率更高)
+        const modeWeights = [0.25, 0.3, 0.2, 0.1, 0.15];
+        const randomVal = Math.random();
+        let accumulatedWeight = 0;
+        let selectedModeObj = modes[0];
+        
+        for(let i=0; i<modes.length; i++) {
+            accumulatedWeight += modeWeights[i];
+            if(randomVal <= accumulatedWeight) {
+                selectedModeObj = modes[i];
+                break;
+            }
         }
-    };
+        
+        const selectedMode = selectedModeObj.key;
+        let hslColors = [];
+        const baseHue = Math.floor(Math.random() * 360);
 
+        // 算法生成逻辑
+        switch (selectedMode) {
+            case 'natural': 
+                {
+                    const direction = Math.random() > 0.5 ? 1 : -1;
+                    const hueSpan = 40 + Math.random() * 40; 
+                    for (let i = 0; i < count; i++) {
+                        const progress = i / (count - 1);
+                        const h = (baseHue + (progress * hueSpan * direction) + 360) % 360;
+                        const s = 60 + Math.random() * 25; 
+                        const l = 30 + (progress * 50) + (Math.random() * 10 - 5);
+                        hslColors.push({h, s, l});
+                    }
+                }
+                break;
+
+            case 'pastel':
+                {
+                    const hueStep = 30 + Math.random() * 60; 
+                    for (let i = 0; i < count; i++) {
+                        const h = (baseHue + (i * hueStep)) % 360;
+                        const s = 50 + Math.random() * 20; 
+                        const l = 82 + Math.random() * 10; 
+                        hslColors.push({h, s, l});
+                    }
+                }
+                break;
+
+            case 'monochrome':
+                {
+                    const s = 60 + Math.random() * 30;
+                    for (let i = 0; i < count; i++) {
+                        const h = (baseHue + Math.random() * 10 - 5 + 360) % 360;
+                        const l = 20 + ((i / (count - 1)) * 70);
+                        hslColors.push({h, s, l});
+                    }
+                }
+                break;
+                
+            case 'dark':
+                {
+                    for (let i = 0; i < count; i++) {
+                        const h = (baseHue + (i * 40)) % 360;
+                        const s = 70 + Math.random() * 20;
+                        const l = 15 + Math.random() * 25; 
+                        hslColors.push({h, s, l});
+                    }
+                    // 最后一个颜色高亮
+                    hslColors[hslColors.length-1].l = 65;
+                    hslColors[hslColors.length-1].s = 90;
+                }
+                break;
+
+            case 'vibrant':
+            default:
+                {
+                    hslColors.push({h: baseHue, s: 80, l: 55});
+                    const endHue = (baseHue + 120 + Math.random() * 120) % 360;
+                    
+                    // 中间色插值
+                    for (let i = 1; i < count; i++) {
+                        const ratio = i / (count - 1);
+                        let h;
+                        if (Math.abs(endHue - baseHue) > 180) {
+                            if (endHue > baseHue) h = (baseHue - (360 - endHue + baseHue) * ratio + 360) % 360;
+                            else h = (baseHue + (360 - baseHue + endHue) * ratio) % 360;
+                        } else {
+                            h = baseHue + (endHue - baseHue) * ratio;
+                        }
+                        const s = 85 + Math.random() * 10;
+                        const l = 55 + Math.random() * 10;
+                        hslColors.push({h, s, l});
+                    }
+                }
+                break;
+        }
+
+        // 排序处理：除了 vibrant 和 dark，其他建议按明度排序
+        if (selectedMode !== 'vibrant' && selectedMode !== 'dark') {
+            hslColors.sort((a, b) => a.l - b.l);
+            if (Math.random() > 0.5) hslColors.reverse();
+        }
+
+        // 返回HEX数组和模式名称
+        return {
+            colors: hslColors.map(c => hslToHex(c.h, c.s, c.l)),
+            label: selectedModeObj.label
+        };
+    }
+
+    // --- 4. 主生成函数 ---
     function generateTheme() {
-        const themeKeys = Object.keys(themes);
-        const randomKey = themeKeys[Math.floor(Math.random() * themeKeys.length)];
-        const moodColorsHSL = themes[randomKey]();
-        const colors = moodColorsHSL.map(c => hslToHex(c.h, c.s, c.l));
+        // 使用新算法生成 4 个颜色
+        const themeData = generateSmartColors(4);
+        const colors = themeData.colors;
 
-        document.getElementById('moodText').innerText = randomKey;
+        // 渲染文本 (根据算法选中的模式)
+        document.getElementById('moodText').innerText = themeData.label;
         document.getElementById('dateTag').innerText = 'NO.' + rand(100, 999);
 
+        // 渲染背景
         document.getElementById('bgLayer').style.backgroundColor = colors[2]; 
         
+        // 渲染光球
         const orb1 = document.getElementById('orb1');
         const orb2 = document.getElementById('orb2');
         orb1.style.backgroundColor = colors[0];
         orb2.style.backgroundColor = colors[1];
         
+        // 随机动画位移
         orb1.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(8,12)/10})`;
         orb2.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(8,12)/10})`;
 
+        // 渲染色卡
         const swatchBox = document.getElementById('swatchBox');
         swatchBox.innerHTML = '';
         
@@ -352,8 +419,6 @@
                 </div>
             `;
         });
-        
-        // 【修正】这里已经删除了显示 toast 的代码
     }
 
     window.onload = generateTheme;
