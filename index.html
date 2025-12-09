@@ -15,6 +15,7 @@
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            outline: none; /* 去除默认轮廓线 */
         }
 
         body {
@@ -32,14 +33,73 @@
             overflow-x: hidden;
         }
 
-        /* 顶部按钮 */
+        /* --- 顶部控件区域 --- */
         .controls { 
-            margin-bottom: 20px; 
+            margin-bottom: 25px; 
             z-index: 10; 
             width: 100%;
             display: flex;
+            flex-direction:row;
+            align-items: center;
             justify-content: center;
+            gap: 12px; /* 下拉框和按钮的间距 */
         }
+
+        /* --- 下拉框容器 (用于自定义箭头) --- */
+        .select-wrapper {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            max-width: 200px; /* 与按钮宽度一致 */
+        }
+
+        /* --- 自定义下拉箭头 --- */
+        .select-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid rgba(255,255,255,0.6);
+            border-bottom: 2px solid rgba(255,255,255,0.6);
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none; /* 让点击穿透到 select */
+            transition: transform 0.3s ease;
+        }
+        
+        /* --- 下拉框本体美化 --- */
+        select {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50px;
+            appearance: none; /* 移除默认样式 */
+            -webkit-appearance: none;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            text-align: center;
+            text-align-last: center; /* 让文字居中 */
+        }
+        
+        select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 下拉选项在某些浏览器中较难样式化，保持黑色背景以防看不清 */
+        option {
+            background: #222;
+            color: #fff;
+            padding: 10px;
+        }
+
+        /* --- 生成按钮 --- */
         .btn-gen {
             padding: 12px 30px; 
             border-radius: 50px; border: none;
@@ -49,20 +109,21 @@
             transition: transform 0.2s, box-shadow 0.2s;
             text-transform: uppercase; letter-spacing: 1px;
             font-family: inherit;
-            min-width: 200px; /* 移动端适配 */
+            width: 100%;
+            max-width: 200px;
         }
         .btn-gen:active { transform: scale(0.96); } 
         @media (hover: hover) {
             .btn-gen:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(142, 197, 252, 0.6); }
         }
 
-        /* 海报主体 - 响应式改造 */
+        /* --- 海报主体 --- */
         .poster-container {
             width: 100%;
             max-width: 450px; 
-            aspect-ratio: 2/3; /* 保持海报比例 */
+            aspect-ratio: 2/3; 
             height: auto; 
-            max-height: 85vh; 
+            max-height: 80vh; 
             background: var(--poster-bg);
             position: relative;
             overflow: hidden;
@@ -75,18 +136,17 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1; transition: background 0.8s ease;
         }
-        /* --- 在 style 中找到 .orb 并替换为以下内容 --- */
+        
         .orb {
             position: absolute; border-radius: 50%;
-            filter: blur(80px); /* 增大模糊半径让过渡更柔和 */
+            filter: blur(80px);
             opacity: 0.8;
-            /* 关键优化：混合模式让颜色叠加更通透，不再是像泥巴一样混合 */
             mix-blend-mode: screen; 
             transition: all 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
             width: 90%; padding-bottom: 90%;
             height: 0;
         }
-        /* 针对暗色模式的特殊处理，如果是暗色背景，用 exclusion 或 normal 效果更好，JS中会动态调整 */
+        
         body.dark-mode .orb {
             mix-blend-mode: hard-light;
             opacity: 0.6;
@@ -118,7 +178,7 @@
         }
         .mood-word {
             font-family: "Arial Black", "Impact", "Microsoft YaHei", sans-serif;
-            font-size: clamp(32px, 11.5vw, 60px); /* 字体自适应 */
+            font-size: clamp(32px, 11.5vw, 60px); 
             font-weight: 900; letter-spacing: 0px; line-height: 0.9;
             color: #111; mix-blend-mode: overlay; 
             text-transform: uppercase; text-align: center;
@@ -133,19 +193,14 @@
             max-height: 110px; min-height: 70px;
             margin-bottom: 20px; 
         }
-        /* 修改 .swatch 样式 */
+        
         .swatch {
             flex: 1;
             border-radius: 12px;
             display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
             padding: 10px 5px;
-            
-            /* 1. 移除之前的粗白边框，改为极细的半透明边框，仅用于增加精致度 */
             border: 1px solid rgba(255,255,255, 0.2);
-            
-            /* 2. 阴影保持适中，不需要太夸张，因为背景有了明度差，自然能分清 */
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
             cursor: pointer;
@@ -196,7 +251,20 @@
 <div class="toast" id="toast">色号已复制</div>
 
 <div class="controls">
-    <button class="btn-gen" onclick="generateTheme()">✨ 生成随机主题配色</button>
+    <!-- 下拉框选择主题 -->
+    <div class="select-wrapper">
+        <select id="modeSelect" onchange="generateTheme()">
+            <option value="random">随机风格 (Random)</option>
+            <option value="soft">柔和糖果 (Soft)</option>
+            <option value="mono">极简单色 (Mono)</option>
+            <option value="ocean">自然呼吸 (Natural)</option>
+            <option value="vibrant">鲜艳明快 (Vibrant)</option>
+            <option value="cyber">赛博霓虹 (Cyber)</option>
+        </select>
+    </div>
+    
+    <!-- 生成按钮 -->
+    <button class="btn-gen" onclick="generateTheme()">✨ 重新生成</button>
 </div>
 
 <div class="poster-container" id="poster">
@@ -242,14 +310,6 @@
         return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
     }
 
-    // 辅助：计算 Hex 的感知亮度 (0-255)
-    function getBrightness(hex) {
-        const r = parseInt(hex.substring(1, 3), 16);
-        const g = parseInt(hex.substring(3, 5), 16);
-        const b = parseInt(hex.substring(5, 7), 16);
-        return (r * 299 + g * 587 + b * 114) / 1000;
-    }
-
     // --- 交互：复制色彩 ---
     function copyColor(element, hex) {
         navigator.clipboard.writeText(hex).then(() => {
@@ -271,73 +331,70 @@
         });
     }
 
-    // --- 核心算法优化：防止颜色脏/灰 ---
+    // --- 核心算法 ---
     function generateSmartColors(count) {
-        const modes = [
-            { key: 'vibrant', label: 'VIBRANT' }, // 鲜艳
-            { key: 'soft', label: 'SOFT' },       // 柔和 (原 Pastel)
-            { key: 'ocean', label: 'OCEAN' },     // 自然 (原 Natural)
-            { key: 'cyber', label: 'CYBER' },     // 暗色 (原 Dark)
-            { key: 'mono', label: 'MONO' }        // 单色
-        ];
+        // 从下拉框获取当前选择的模式
+        const modeSelect = document.getElementById('modeSelect');
+        let selectedKey = modeSelect.value;
         
-        // 调整权重，让好看的模式出现概率更高
-        const modeWeights = [0.3, 0.25, 0.25, 0.15, 0.05];
-        const randomVal = Math.random();
-        let accumulatedWeight = 0;
-        let selectedModeObj = modes[0];
-        
-        for(let i=0; i<modes.length; i++) {
-            accumulatedWeight += modeWeights[i];
-            if(randomVal <= accumulatedWeight) {
-                selectedModeObj = modes[i];
-                break;
+        const modesMap = {
+            'vibrant': { label: 'VIBRANT' },
+            'soft':    { label: 'SOFT' },
+            'ocean':   { label: 'OCEAN' },
+            'cyber':   { label: 'CYBER' },
+            'mono':    { label: 'MONO' }
+        };
+
+        // 处理随机逻辑
+        if (selectedKey === 'random') {
+            const keys = Object.keys(modesMap);
+            const modeWeights = [0.3, 0.25, 0.25, 0.15, 0.05];
+            const randomVal = Math.random();
+            let accumulatedWeight = 0;
+            
+            // 默认值
+            selectedKey = keys[0];
+            
+            for(let i=0; i<keys.length; i++) {
+                accumulatedWeight += modeWeights[i];
+                if(randomVal <= accumulatedWeight) {
+                    selectedKey = keys[i];
+                    break;
+                }
             }
         }
         
-        const mode = selectedModeObj.key;
+        const label = modesMap[selectedKey].label;
         let hslColors = [];
         const baseHue = rand(0, 360);
 
-        // 优化策略：
-        // 1. 避免 S < 20 (太灰)
-        // 2. 避免 L 在 30-60 之间且 S 较低的情况 (泥巴色)
-        
-        switch (mode) {
-            case 'vibrant': // 高饱和，对比色
+        // 生成颜色策略
+        switch (selectedKey) {
+            case 'vibrant': // 高饱和
                 hslColors.push({h: baseHue, s: rand(80, 100), l: rand(50, 65)});
                 const compHue = (baseHue + 180 + rand(-30, 30)) % 360;
                 hslColors.push({h: compHue, s: rand(80, 100), l: rand(55, 70)});
-                // 补两个过渡色
                 hslColors.push({h: (baseHue + 40) % 360, s: 90, l: 60});
                 hslColors.push({h: (compHue - 40 + 360) % 360, s: 90, l: 60});
                 break;
 
-            case 'soft': // 高明度，中低饱和 (莫兰迪/糖果)
+            case 'soft': // 柔和
                 for (let i = 0; i < count; i++) {
                     const h = (baseHue + (i * 50)) % 360;
-                    // 饱和度不能太低，否则像褪色
-                    const s = rand(60, 85); 
-                    // 明度必须高，保持干净
-                    const l = rand(82, 95); 
-                    hslColors.push({h, s, l});
+                    hslColors.push({h, s: rand(60, 85), l: rand(82, 95)});
                 }
                 break;
 
-            case 'ocean': // 邻近色，模拟自然
+            case 'ocean': // 自然
                 const direction = Math.random() > 0.5 ? 1 : -1;
                 for (let i = 0; i < count; i++) {
                     const h = (baseHue + (i * 30 * direction) + 360) % 360;
-                    const s = rand(40, 70);
-                    const l = rand(30, 85); // 允许明暗对比
-                    hslColors.push({h, s, l});
+                    hslColors.push({h, s: rand(40, 70), l: rand(30, 85)});
                 }
                 break;
 
-            case 'cyber': // 深色背景，霓虹光
-                // 背景基调：深蓝/深紫/深黑
+            case 'cyber': // 赛博
                 hslColors.push({h: rand(220, 300), s: 60, l: rand(5, 12)}); 
-                // 荧光色
                 for (let i = 1; i < count; i++) {
                     const h = (baseHue + i * 60) % 360;
                     hslColors.push({h, s: 100, l: rand(60, 75)});
@@ -348,15 +405,12 @@
             default:
                 for (let i = 0; i < count; i++) {
                     const h = baseHue;
-                    const s = rand(50, 90);
-                    // 拉开明度差距，避免糊在一起
                     const l = 15 + ((i / (count - 1)) * 80); 
-                    hslColors.push({h, s, l});
+                    hslColors.push({h, s: rand(50, 90), l});
                 }
                 break;
         }
 
-        // 统一转换为 Hex 对象，包含原始HSL信息以便后续排序
         const result = hslColors.map(c => {
             return {
                 hex: hslToHex(c.h, c.s, c.l),
@@ -366,8 +420,8 @@
 
         return {
             palette: result,
-            mode: selectedModeObj.key,
-            label: selectedModeObj.label
+            mode: selectedKey, // 返回实际计算使用的 key
+            label: label
         };
     }
 
@@ -379,10 +433,10 @@
         let bgBaseColor, orb1Hex, orb2Hex;
 
         if (themeData.mode === 'cyber') {
-            // Cyber模式：按亮度升序（暗->亮）
+            // Cyber模式：暗 -> 亮
             colorsObj.sort((a, b) => a.l - b.l); 
             
-            bgBaseColor = colorsObj[0]; // 这是一个对象 {hex, h, s, l}
+            bgBaseColor = colorsObj[0]; 
             orb1Hex = colorsObj[1].hex;
             orb2Hex = colorsObj[3].hex;
 
@@ -393,12 +447,11 @@
             document.querySelector('.mood-word').style.color = '#fff';
 
         } else {
-            // 其他模式：按亮度降序（亮->暗）
+            // 其他模式：亮 -> 暗
             colorsObj.sort((a, b) => b.l - a.l); 
             
             bgBaseColor = colorsObj[0]; 
             
-            // 挑选高饱和度做光球
             let remaining = colorsObj.slice(1);
             remaining.sort((a, b) => b.s - a.s);
             orb1Hex = remaining[0].hex;
@@ -411,38 +464,23 @@
             document.querySelector('.mood-word').style.color = '#111';
         }
 
-        // --- 2. 核心优化：计算背景色 ---
-        // 我们不直接用 bgBaseColor.hex 做背景，而是对其亮度(L)进行微调
-        // 这样背景色和第一个色块（bgBaseColor）就会有区分，但色调一致
-        
+        // --- 2. 背景微调 ---
         let finalBgHex;
         if (themeData.mode === 'cyber') {
-            // 暗色模式：背景比色块更暗 (L 减小)
-            // 比如色块是深蓝，背景就是近乎黑的蓝
             let newL = Math.max(2, bgBaseColor.l - 12); 
             finalBgHex = hslToHex(bgBaseColor.h, bgBaseColor.s, newL);
         } else {
-            // 亮色模式：背景比色块更亮 (L 增加)
-            // 比如色块是米色，背景就是近乎白的米色
-            // 如果色块本身已经很白(>95)，则稍微降低一点亮度做区分，或者保持纯白
             let newL = Math.min(98, bgBaseColor.l + 10);
-            
-            // 特殊情况：如果原来就很亮，加不动了，就反向减一点点，保证有对比
             if (bgBaseColor.l > 90) newL = bgBaseColor.l - 5; 
-            
             finalBgHex = hslToHex(bgBaseColor.h, bgBaseColor.s, newL);
         }
 
         // --- 3. 渲染 ---
-        
-        // 文本
         document.getElementById('moodText').innerText = themeData.label;
         document.getElementById('dateTag').innerText = 'NO.' + rand(100, 999);
 
-        // 背景：应用计算后的颜色
         document.getElementById('bgLayer').style.backgroundColor = finalBgHex; 
         
-        // 光球
         const orb1 = document.getElementById('orb1');
         const orb2 = document.getElementById('orb2');
         orb1.style.backgroundColor = orb1Hex;
@@ -451,11 +489,9 @@
         orb1.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(10,14)/10})`;
         orb2.style.transform = `translate(${rand(-20, 20)}%, ${rand(-20, 20)}%) scale(${rand(10,14)/10})`;
 
-        // 色卡
         const swatchBox = document.getElementById('swatchBox');
         swatchBox.innerHTML = '';
         
-        // 显示原始生成的4个颜色（第一个颜色现在会明显区别于背景）
         colorsObj.map(c => c.hex).forEach(hex => {
             swatchBox.innerHTML += `
                 <div class="swatch" style="background-color: ${hex}" onclick="copyColor(this, '${hex}')">
