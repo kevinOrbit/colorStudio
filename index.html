@@ -5,6 +5,8 @@
     <!-- 核心适配：设置视口，禁止用户缩放 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaimana Color Studio (Pro)</title>
+    <!-- 引入 html-to-image 库，用于高保真截图 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
     <style>
         :root {
             --bg: #121212;
@@ -15,7 +17,7 @@
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            outline: none; /* 去除默认轮廓线 */
+            outline: none;
         }
 
         body {
@@ -35,25 +37,23 @@
 
         /* --- 顶部控件区域 --- */
         .controls { 
-            margin-bottom: 25px; 
+            margin-bottom: 15px; 
             z-index: 10; 
             width: 100%;
             display: flex;
             flex-direction:row;
             align-items: center;
             justify-content: center;
-            gap: 12px; /* 下拉框和按钮的间距 */
+            gap: 12px;
         }
 
-        /* --- 下拉框容器 (用于自定义箭头) --- */
         .select-wrapper {
             flex: 1;
             position: relative;
             width: 100%;
-            max-width: 200px; /* 与按钮宽度一致 */
+            max-width: 200px;
         }
 
-        /* --- 自定义下拉箭头 --- */
         .select-wrapper::after {
             content: '';
             position: absolute;
@@ -64,11 +64,10 @@
             border-right: 2px solid rgba(255,255,255,0.6);
             border-bottom: 2px solid rgba(255,255,255,0.6);
             transform: translateY(-70%) rotate(45deg);
-            pointer-events: none; /* 让点击穿透到 select */
+            pointer-events: none;
             transition: transform 0.3s ease;
         }
         
-        /* --- 下拉框本体美化 --- */
         select {
             width: 100%;
             padding: 12px 20px;
@@ -78,13 +77,13 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 50px;
-            appearance: none; /* 移除默认样式 */
+            appearance: none;
             -webkit-appearance: none;
             cursor: pointer;
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
             text-align: center;
-            text-align-last: center; /* 让文字居中 */
+            text-align-last: center;
         }
         
         select:focus {
@@ -92,7 +91,6 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* 下拉选项在某些浏览器中较难样式化，保持黑色背景以防看不清 */
         option {
             background: #222;
             color: #fff;
@@ -129,6 +127,8 @@
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             display: flex; flex-direction: column;
+            /* 关键：为导出做准备，确保背景是干净的 */
+            transform: translateZ(0); 
         }
 
         /* 动态背景层 */
@@ -152,13 +152,11 @@
             opacity: 0.6;
         }
 
-        /* 噪点层 */
         .noise-layer {
             position: absolute; inset: 0; z-index: 2; opacity: 0.12; pointer-events: none;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
         }
 
-        /* 内容层 */
         .content-layer {
             position: relative; z-index: 3;
             height: 100%; 
@@ -172,7 +170,6 @@
         .brand { font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #111; }
         .meta { font-weight: 500; font-size: 13px; color: #555;text-align: center; }
 
-        /* 情绪大字 */
         .mood-display {
             flex: 1; display: flex; align-items: center; justify-content: center;
         }
@@ -185,7 +182,6 @@
             word-break: break-word;
         }
 
-        /* 配色区域 */
         .palette-section { margin-top: 10px; }
         .palette-row { 
             display: flex; gap: 8px; 
@@ -228,7 +224,6 @@
             margin-top: -10px;
         }
         
-        /* 提示框 */
         .toast {
             position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
             background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);
@@ -236,6 +231,40 @@
             opacity: 0; transition: opacity 0.5s; pointer-events: none;
             color: #fff; font-weight: 500; white-space: nowrap; z-index: 100;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- 导出按钮样式 --- */
+        .download-area {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-download {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255,255,255,0.8);
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-download:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.6);
+            color: #fff;
+        }
+
+        .btn-download:active {
+            transform: scale(0.98);
         }
 
         @media screen and (max-width: 340px) {
@@ -247,11 +276,9 @@
 </head>
 <body>
 
-<!-- 提示框内容会根据复制的颜色动态改变 -->
 <div class="toast" id="toast">色号已复制</div>
 
 <div class="controls">
-    <!-- 下拉框选择主题 -->
     <div class="select-wrapper">
         <select id="modeSelect" onchange="generateTheme()">
             <option value="random">随机风格 (Random)</option>
@@ -262,11 +289,10 @@
             <option value="cyber">赛博霓虹 (Cyber)</option>
         </select>
     </div>
-    
-    <!-- 生成按钮 -->
     <button class="btn-gen" onclick="generateTheme()">✨ 重新生成</button>
 </div>
 
+<!-- 海报容器：加上 id 以便 JS 选中 -->
 <div class="poster-container" id="poster">
     <div class="mesh-bg" id="bgLayer">
         <div class="orb" id="orb1" style="top: -10%; left: -10%;"></div>
@@ -292,6 +318,13 @@
             <div class="footer-sig">@Kaimana</div>
         </div>
     </div>
+</div>
+
+<!-- 底部导出区域 -->
+<div class="download-area">
+    <button class="btn-download" id="downloadBtn" onclick="exportPoster()">
+        <span id="btnText">保存海报</span>
+    </button>
 </div>
 
 <script>
@@ -331,30 +364,68 @@
         });
     }
 
+    // --- 导出逻辑 ---
+    function exportPoster() {
+        const node = document.getElementById('poster');
+        const btn = document.getElementById('downloadBtn');
+        const btnText = document.getElementById('btnText');
+        
+        // 更改按钮状态
+        const originalText = btnText.innerText;
+        btnText.innerText = '生成中...';
+        btn.style.opacity = '0.7';
+        btn.disabled = true;
+
+        // 使用 htmlToImage 库生成 PNG
+        htmlToImage.toPng(node, {
+            cacheBust: true,
+            pixelRatio: 3, // 3倍图，保证移动端清晰
+            style: {
+                // 强制去除导出时的外部阴影，只保留海报本身内容
+                boxShadow: 'none',
+                // 确保圆角被裁剪（有些浏览器需要）
+                overflow: 'hidden'
+            }
+        })
+        .then(function (dataUrl) {
+            var link = document.createElement('a');
+            link.download = 'kaimana-color-' + Date.now() + '.png';
+            link.href = dataUrl;
+            link.click();
+            
+            // 恢复按钮
+            btnText.innerText = originalText;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        })
+        .catch(function (error) {
+            console.error('oops, something went wrong!', error);
+            alert('图片生成失败，请重试');
+            btnText.innerText = originalText;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        });
+    }
+
     // --- 核心算法 ---
     function generateSmartColors(count) {
-        // 从下拉框获取当前选择的模式
         const modeSelect = document.getElementById('modeSelect');
         let selectedKey = modeSelect.value;
         
         const modesMap = {
             'vibrant': { label: 'VIBRANT' },
             'soft':    { label: 'SOFT' },
-            'ocean':   { label: 'OCEAN' },
+            'ocean':   { label: 'NATURAL' },
             'cyber':   { label: 'CYBER' },
             'mono':    { label: 'MONO' }
         };
 
-        // 处理随机逻辑
         if (selectedKey === 'random') {
             const keys = Object.keys(modesMap);
             const modeWeights = [0.3, 0.25, 0.25, 0.15, 0.05];
             const randomVal = Math.random();
             let accumulatedWeight = 0;
-            
-            // 默认值
             selectedKey = keys[0];
-            
             for(let i=0; i<keys.length; i++) {
                 accumulatedWeight += modeWeights[i];
                 if(randomVal <= accumulatedWeight) {
@@ -368,39 +439,34 @@
         let hslColors = [];
         const baseHue = rand(0, 360);
 
-        // 生成颜色策略
         switch (selectedKey) {
-            case 'vibrant': // 高饱和
+            case 'vibrant': 
                 hslColors.push({h: baseHue, s: rand(80, 100), l: rand(50, 65)});
                 const compHue = (baseHue + 180 + rand(-30, 30)) % 360;
                 hslColors.push({h: compHue, s: rand(80, 100), l: rand(55, 70)});
                 hslColors.push({h: (baseHue + 40) % 360, s: 90, l: 60});
                 hslColors.push({h: (compHue - 40 + 360) % 360, s: 90, l: 60});
                 break;
-
-            case 'soft': // 柔和
+            case 'soft':
                 for (let i = 0; i < count; i++) {
                     const h = (baseHue + (i * 50)) % 360;
                     hslColors.push({h, s: rand(60, 85), l: rand(82, 95)});
                 }
                 break;
-
-            case 'ocean': // 自然
+            case 'ocean':
                 const direction = Math.random() > 0.5 ? 1 : -1;
                 for (let i = 0; i < count; i++) {
                     const h = (baseHue + (i * 30 * direction) + 360) % 360;
                     hslColors.push({h, s: rand(40, 70), l: rand(30, 85)});
                 }
                 break;
-
-            case 'cyber': // 赛博
+            case 'cyber':
                 hslColors.push({h: rand(220, 300), s: 60, l: rand(5, 12)}); 
                 for (let i = 1; i < count; i++) {
                     const h = (baseHue + i * 60) % 360;
                     hslColors.push({h, s: 100, l: rand(60, 75)});
                 }
                 break;
-
             case 'mono':
             default:
                 for (let i = 0; i < count; i++) {
@@ -418,53 +484,37 @@
             };
         });
 
-        return {
-            palette: result,
-            mode: selectedKey, // 返回实际计算使用的 key
-            label: label
-        };
+        return { palette: result, mode: selectedKey, label: label };
     }
 
     function generateTheme() {
         const themeData = generateSmartColors(4);
         let colorsObj = themeData.palette;
         
-        // --- 1. 智能排序 ---
         let bgBaseColor, orb1Hex, orb2Hex;
 
         if (themeData.mode === 'cyber') {
-            // Cyber模式：暗 -> 亮
             colorsObj.sort((a, b) => a.l - b.l); 
-            
             bgBaseColor = colorsObj[0]; 
             orb1Hex = colorsObj[1].hex;
             orb2Hex = colorsObj[3].hex;
-
-            // 样式调整
             document.body.classList.add('dark-mode');
             document.querySelector('.brand').style.color = '#fff';
             document.querySelector('.meta').style.color = '#ccc';
             document.querySelector('.mood-word').style.color = '#fff';
-
         } else {
-            // 其他模式：亮 -> 暗
             colorsObj.sort((a, b) => b.l - a.l); 
-            
             bgBaseColor = colorsObj[0]; 
-            
             let remaining = colorsObj.slice(1);
             remaining.sort((a, b) => b.s - a.s);
             orb1Hex = remaining[0].hex;
             orb2Hex = remaining[1] ? remaining[1].hex : remaining[0].hex;
-
-            // 样式调整
             document.body.classList.remove('dark-mode');
             document.querySelector('.brand').style.color = '#111';
             document.querySelector('.meta').style.color = '#555';
             document.querySelector('.mood-word').style.color = '#111';
         }
 
-        // --- 2. 背景微调 ---
         let finalBgHex;
         if (themeData.mode === 'cyber') {
             let newL = Math.max(2, bgBaseColor.l - 12); 
@@ -475,7 +525,6 @@
             finalBgHex = hslToHex(bgBaseColor.h, bgBaseColor.s, newL);
         }
 
-        // --- 3. 渲染 ---
         document.getElementById('moodText').innerText = themeData.label;
         document.getElementById('dateTag').innerText = 'NO.' + rand(100, 999);
 
