@@ -272,6 +272,42 @@
             .btn-gen { font-size: 12px; padding: 10px 20px; }
         }
 
+
+        /* --- 新增：移动端图片预览遮罩层 --- */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+
+        .modal-content {
+            max-width: 100%;
+            max-height: 80%;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            /* 关键：允许点击和长按 */
+            pointer-events: auto; 
+            user-select: none;
+        }
+
+        .modal-tip {
+            color: #fff; margin-top: 15px; font-size: 15px; font-weight: 500;
+            text-align: center; letter-spacing: 1px;
+        }
+
+        .modal-close {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: rgba(255,255,255,0.2);
+            color: white; border: 1px solid white;
+            border-radius: 50px; cursor: pointer; font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -315,7 +351,7 @@
             <div class="palette-row" id="swatchBox">
                 <!-- JS 插入色卡 -->
             </div>
-            <div class="footer-sig">@Kaimana</div>
+            <!-- <div class="footer-sig">@Kaimana</div> -->
         </div>
     </div>
 </div>
@@ -327,6 +363,12 @@
     </button>
 </div>
 
+<!-- 图片预览弹窗 (用于移动端长按保存) -->
+<div id="imageModal" class="modal-overlay">
+    <img id="generatedImage" class="modal-content" src="" alt="长按保存">
+    <div class="modal-tip">👆 长按上方图片保存到相册</div>
+    <button class="modal-close" onclick="closeModal()">关闭</button>
+</div>
 <script>
     // --- 基础工具 ---
     const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -364,49 +406,89 @@
         });
     }
 
-    // --- 导出逻辑 ---
+// --- 新增：工具函数 ---
+    // 判断是否为移动端环境
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 850;
+    }
+
+    // 关闭弹窗并释放内存
+    function closeModal() {
+        document.getElementById('imageModal').style.display = 'none';
+        const img = document.getElementById('generatedImage');
+        if (img.src) URL.revokeObjectURL(img.src);
+        img.src = "";
+    }
+
+    // --- 修改后的导出逻辑 ---
     function exportPoster() {
         const node = document.getElementById('poster');
         const btn = document.getElementById('downloadBtn');
         const btnText = document.getElementById('btnText');
         
-        // 更改按钮状态
         const originalText = btnText.innerText;
+        
+        // 1. 改变按钮状态
         btnText.innerText = '生成中...';
         btn.style.opacity = '0.7';
         btn.disabled = true;
 
-        // 使用 htmlToImage 库生成 PNG
-        htmlToImage.toPng(node, {
+        // 2. 使用 toBlob 替代 toPng (核心修改点)
+        htmlToImage.toBlob(node, {
             cacheBust: true,
-            pixelRatio: 3, // 3倍图，保证移动端清晰
+            pixelRatio: 3, // 保持3倍高清
             style: {
                 // 强制去除导出时的外部阴影，只保留海报本身内容
                 boxShadow: 'none',
-                // 确保圆角被裁剪（有些浏览器需要）
-                overflow: 'hidden'
+                // 确保圆角被正确裁剪
+                overflow: 'hidden',
+                // 防止移动端因为缩放导致截图偏移
+                transform: 'none' 
             }
         })
-        .then(function (dataUrl) {
-            var link = document.createElement('a');
-            link.download = 'kaimana-color-' + Date.now() + '.png';
-            link.href = dataUrl;
-            link.click();
+        .then(function (blob) {
+            // 生成短链接 Blob URL
+            const url = URL.createObjectURL(blob);
+
+            if (isMobile()) {
+                // === 移动端逻辑：显示弹窗 ===
+                const modal = document.getElementById('imageModal');
+                const img = document.getElementById('generatedImage');
+                
+                img.src = url; 
+                modal.style.display = 'flex'; // 唤起弹窗
+                
+                // 显示 Toast 提示
+                const toast = document.getElementById('toast');
+                toast.innerText = "请长按图片保存 📸"; 
+                toast.style.opacity = 1;
+                if (window.toastTimer) clearTimeout(window.toastTimer);
+                window.toastTimer = setTimeout(() => { toast.style.opacity = 0; }, 3000);
+
+            } else {
+                // === 电脑端逻辑：自动下载 ===
+                var link = document.createElement('a');
+                link.download = 'kaimana-color-' + Date.now() + '.png';
+                link.href = url;
+                link.click();
+                
+                // 延时释放内存
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
             
-            // 恢复按钮
+            // 恢复按钮状态
             btnText.innerText = originalText;
             btn.style.opacity = '1';
             btn.disabled = false;
         })
         .catch(function (error) {
-            console.error('oops, something went wrong!', error);
+            console.error('导出失败:', error);
             alert('图片生成失败，请重试');
             btnText.innerText = originalText;
             btn.style.opacity = '1';
             btn.disabled = false;
         });
     }
-
     // --- 核心算法 ---
     function generateSmartColors(count) {
         const modeSelect = document.getElementById('modeSelect');
